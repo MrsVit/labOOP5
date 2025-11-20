@@ -8,9 +8,9 @@
 template<typename T>
 class MyList {
 private:
-    using Allocator = std::pmr::polymorphic_allocator<Node>;
-    Node* head;
-    Node* tail;
+    using Allocator = std::pmr::polymorphic_allocator<Node<T>>;
+    Node<T>* head;
+    Node<T>* tail;
     size_t _size;
     Allocator _alloc;
 
@@ -56,14 +56,17 @@ public:
 
     void clear();
 
-    iterator begin() { return iterator(head); }
-    iterator end() { return iterator(nullptr); }
+    iterator<T> begin() { return iterator<T>(head); }
+    iterator<T> end() { return iterator<T>(nullptr); }
+
+    iterator<T> begin() const { return iterator<T>(head); }
+    iterator<T> end()   const { return iterator<T>(nullptr); }
     void print() const;
 };
 
 template<typename T>
 void MyList<T>::push_back(const T& value) {
-    Node* new_node = _alloc.allocate(1);
+    Node<T>* new_node = _alloc.allocate(1);
     try {
         _alloc.construct(new_node, value, nullptr, tail);
         if (tail) {
@@ -81,7 +84,7 @@ void MyList<T>::push_back(const T& value) {
 
 template<typename T>
 void MyList<T>::push_front(const T& value) {
-    Node* new_node = _alloc.allocate(1);
+    Node<T>* new_node = _alloc.allocate(1);
     try {
         _alloc.construct(new_node, value, head, nullptr);
         if (head) {
@@ -100,7 +103,7 @@ void MyList<T>::push_front(const T& value) {
 template<typename T>
 void MyList<T>::pop_back() {
     if (empty()) throw std::out_of_range("empty list");
-    Node* to_delete = tail;
+    Node<T>* to_delete = tail;
     tail = tail->prev;
     if (tail) {
         tail->next = nullptr;
@@ -115,7 +118,7 @@ void MyList<T>::pop_back() {
 template<typename T>
 void MyList<T>::pop_front() {
     if (empty()) throw std::out_of_range("empty list");
-    Node* to_delete = head;
+    Node<T>* to_delete = head;
     head = head->next;
     if (head) {
         head->prev = nullptr;

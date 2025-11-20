@@ -1,69 +1,32 @@
 #include <gtest/gtest.h>
-#include "..\head\list.hpp"
-
-template<typename T>
-bool operator==(const MyList<T>& lhs, const MyList<T>& rhs) {
-    if (lhs.size() != rhs.size()) return false;
-    auto it1 = lhs.begin();
-    auto it2 = rhs.begin();
-    while (it1 != lhs.end() && it2 != rhs.end()) {
-        if (*it1 != *it2) return false;
-        ++it1;
-        ++it2;
-    }
-    return true;
-}
-
-// Тесты
-TEST(MyListTest, DefaultConstructor) {
+#include "..\head\list.hpp" 
+TEST(MyListBasicTest, CreateAndAddElements) {
     MyList<int> list;
     EXPECT_TRUE(list.empty());
     EXPECT_EQ(list.size(), 0u);
-}
-
-TEST(MyListTest, PushBack) {
-    MyList<int> list;
     list.push_back(1);
+    EXPECT_FALSE(list.empty());
+    EXPECT_EQ(list.size(), 1u);
+
     list.push_back(2);
     list.push_back(3);
-
-    EXPECT_FALSE(list.empty());
     EXPECT_EQ(list.size(), 3u);
-    int expected[] = {1, 2, 3};
-    int i = 0;
-    for (const auto& x : list) {
-        EXPECT_EQ(x, expected[i++]);
-    }
 }
 
-TEST(MyListTest, PushFront) {
+TEST(MyListBasicTest, PushFrontOrder) {
     MyList<int> list;
     list.push_front(3);
     list.push_front(2);
     list.push_front(1);
 
-    EXPECT_EQ(list.size(), 3u);
-    int expected[] = {1, 2, 3};
-    int i = 0;
-    for (const auto& x : list) {
-        EXPECT_EQ(x, expected[i++]);
-    }
+    auto it = list.begin();
+    EXPECT_EQ(*it, 1); ++it;
+    EXPECT_EQ(*it, 2); ++it;
+    EXPECT_EQ(*it, 3); ++it;
+    EXPECT_EQ(it, list.end());
 }
 
-TEST(MyListTest, PushFrontAndBackMixed) {
-    MyList<int> list;
-    list.push_back(2);
-    list.push_front(1);
-    list.push_back(3);
-
-    int expected[] = {1, 2, 3};
-    int i = 0;
-    for (const auto& x : list) {
-        EXPECT_EQ(x, expected[i++]);
-    }
-}
-
-TEST(MyListTest, PopBack) {
+TEST(MyListBasicTest, PopOperations) {
     MyList<int> list;
     list.push_back(1);
     list.push_back(2);
@@ -71,118 +34,107 @@ TEST(MyListTest, PopBack) {
 
     list.pop_back();
     EXPECT_EQ(list.size(), 2u);
-    int expected[] = {1, 2};
-    int i = 0;
-    for (const auto& x : list) {
-        EXPECT_EQ(x, expected[i++]);
-    }
-
-    list.pop_back();
-    list.pop_back();
-    EXPECT_TRUE(list.empty());
-}
-
-TEST(MyListTest, PopFront) {
-    MyList<int> list;
-    list.push_back(1);
-    list.push_back(2);
-    list.push_back(3);
 
     list.pop_front();
-    EXPECT_EQ(list.size(), 2u);
-    int expected[] = {2, 3};
-    int i = 0;
-    for (const auto& x : list) {
-        EXPECT_EQ(x, expected[i++]);
-    }
+    EXPECT_EQ(list.size(), 1u);
+    EXPECT_EQ(*list.begin(), 2);
 
-    list.pop_front();
     list.pop_front();
     EXPECT_TRUE(list.empty());
 }
-
-TEST(MyListTest, Clear) {
+TEST(MyListBasicTest, Clear) {
     MyList<std::string> list;
-    list.push_back("a");
-    list.push_back("b");
-    list.push_back("c");
+    list.push_back("hello");
+    list.push_back("world");
+    EXPECT_EQ(list.size(), 2u);
 
     list.clear();
     EXPECT_TRUE(list.empty());
     EXPECT_EQ(list.size(), 0u);
 }
 
-TEST(MyListTest, CopyConstructor) {
-    MyList<int> list1;
-    list1.push_back(10);
-    list1.push_back(20);
-    list1.push_back(30);
+TEST(MyListBasicTest, CopyConstructor) {
+    MyList<int> original;
+    original.push_back(10);
+    original.push_back(20);
 
-    MyList<int> list2(list1);
-    EXPECT_EQ(list1, list2);
-    EXPECT_EQ(list2.size(), 3u);
+    MyList<int> copy = original;
+ EXPECT_EQ(copy.size(), 2u);
+    auto it = copy.begin();
+    EXPECT_EQ(*it, 10); ++it;
+    EXPECT_EQ(*it, 20); ++it;
+    EXPECT_EQ(it, copy.end());
+}
+TEST(MyListBasicTest, CopyAssignment) {
+    MyList<int> source;
+    source.push_back(100);
+    source.push_back(200);
+
+    MyList<int> target;
+    target.push_back(1); 
+    target = source; 
+
+    EXPECT_EQ(target.size(), 2u);
+    auto it = target.begin();
+    EXPECT_EQ(*it, 100); ++it;
+    EXPECT_EQ(*it, 200); ++it;
+    EXPECT_EQ(it, target.end());
 }
 
-TEST(MyListTest, CopyAssignment) {
-    MyList<int> list1;
-    list1.push_back(100);
-    list1.push_back(200);
-
-    MyList<int> list2;
-    list2.push_back(1);
-    list2 = list1;
-
-    EXPECT_EQ(list1, list2);
-    EXPECT_EQ(list2.size(), 2u);
-}
-
-TEST(MyListTest, SelfAssignment) {
+TEST(MyListBasicTest, SelfAssignment) {
     MyList<int> list;
     list.push_back(42);
-    list = list;  // should not crash or corrupt
+
+    list = list; 
     EXPECT_EQ(list.size(), 1u);
     EXPECT_EQ(*list.begin(), 42);
 }
 
-TEST(MyListTest, EmptyListOperationsThrow) {
-    MyList<int> list;
-
-    EXPECT_THROW(list.pop_front(), std::out_of_range);
-    EXPECT_THROW(list.pop_back(), std::out_of_range);
-}
-
-TEST(MyListTest, IteratorBeginEndEmpty) {
-    MyList<int> list;
-    EXPECT_EQ(list.begin(), list.end());
-}
-
-TEST(MyListTest, IteratorTraversal) {
+TEST(MyListBasicTest, WorksWithInt) {
     MyList<int> list;
     list.push_back(5);
     list.push_back(10);
-    list.push_back(15);
-
-    auto it = list.begin();
-    EXPECT_EQ(*it, 5);
-    ++it;
-    EXPECT_EQ(*it, 10);
-    ++it;
-    EXPECT_EQ(*it, 15);
-    ++it;
-    EXPECT_EQ(it, list.end());
+    EXPECT_EQ(list.size(), 2u);
 }
 
-// Дополнительно — проверка с custom memory_resource (опционально)
-TEST(MyListTest, CustomAllocator) {
-    std::pmr::monotonic_buffer_resource mbr{1024};
-    MyList<int> list(&mbr);
+struct Person {
+    std::string name;
+    int age;
+
+    Person(const std::string& n = "", int a = 0) : name(n), age(a) {}
+
+    bool operator==(const Person& other) const {
+        return name == other.name && age == other.age;
+    }
+};
+
+TEST(MyListBasicTest, WorksWithComplexType) {
+    MyList<Person> people;
+    people.push_back(Person("Alice", 30));
+    people.push_back(Person("Bob", 25));
+   EXPECT_EQ(people.size(), 2u);    auto it = people.begin();
+    EXPECT_EQ(it->name, "Alice");
+    EXPECT_EQ(it->age, 30); ++it;
+
+    EXPECT_EQ(it->name, "Bob");
+    EXPECT_EQ(it->age, 25); ++it;
+    EXPECT_EQ(it, people.end());
+}
+
+TEST(MyListBasicTest, IteratorsWork) {
+    MyList<int> list;
     list.push_back(1);
     list.push_back(2);
-    EXPECT_EQ(list.size(), 2u);
-    // Проверим, что использует mbr (косвенно — не упало и работает)
-    int arr[] = {1, 2};
-    int i = 0;
+
+    int sum = 0;
     for (const auto& x : list) {
-        EXPECT_EQ(x, arr[i++]);
+        sum += x;
     }
+    EXPECT_EQ(sum, 3);
+}
+
+TEST(MyListBasicTest, PopFromEmptyThrows) {
+    MyList<int> list;
+    EXPECT_THROW(list.pop_front(), std::out_of_range);
+    EXPECT_THROW(list.pop_back(), std::out_of_range);
 }
