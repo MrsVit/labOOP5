@@ -1,28 +1,14 @@
-#pragma once
-
+# pragma once
+#include "iterator.hpp"
 #include <memory_resource>
 #include <cstddef>
 #include <stdexcept>
 #include <iostream>
-#include "Memorylist.hpp"     
-#include "iterator.hpp"       
 
 template<typename T>
 class MyList {
 private:
-    // Узелок
-    struct Node {
-        T data;
-        Node* next;
-        Node* prev;
-
-        Node(const T& d, Node* n = nullptr, Node* p = nullptr)
-            : data(d), next(n), prev(p) {}
-    };
-
     using Allocator = std::pmr::polymorphic_allocator<Node>;
-    using NodePtr = Node*;
-
     Node* head;
     Node* tail;
     size_t _size;
@@ -33,8 +19,7 @@ public:
     using reference = T&;
     using const_reference = const T&;
     using size_type = size_t;
-    using iterator = ListIterator<T>;
-    using const_iterator = ListIterator<const T>;
+
 
     explicit MyList(std::pmr::memory_resource* upstream = nullptr)
         : head(nullptr), tail(nullptr), _size(0),
@@ -73,10 +58,26 @@ public:
 
     iterator begin() { return iterator(head); }
     iterator end() { return iterator(nullptr); }
-    const_iterator begin() const { return const_iterator(head); }
-    const_iterator end() const { return const_iterator(nullptr); }
     void print() const;
 };
+
+template<typename T>
+void MyList<T>::push_back(const T& value) {
+    Node* new_node = _alloc.allocate(1);
+    try {
+        _alloc.construct(new_node, value, nullptr, tail);
+        if (tail) {
+            tail->next = new_node;
+        } else {
+            head = new_node;
+        }
+        tail = new_node;
+        ++_size;
+    } catch (...) {
+        _alloc.deallocate(new_node, 1);
+        throw;
+    }
+}
 
 template<typename T>
 void MyList<T>::push_front(const T& value) {
@@ -131,4 +132,12 @@ void MyList<T>::clear() {
     while (!empty()) {
         pop_front();
     }
+}
+
+template<typename T>
+void MyList<T>::print() const {
+    for (const auto& x : *this) {
+        std::cout << x << ' ';
+    }
+    std::cout << '\n';
 }
