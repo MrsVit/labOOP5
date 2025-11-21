@@ -15,7 +15,7 @@ private:
     Allocator _alloc;
 
 public:
-    using value_type = T;
+    using val_type = T;
     using reference = T&;
     using const_reference = const T&;
     using size_type = size_t;
@@ -46,14 +46,13 @@ public:
         return *this;
     }
 
-    void push_back(const T& value);
-    void push_front(const T& value);
+    void push_back(const T& val);
+    void push_front(const T& val);
     void pop_back();
     void pop_front();
 
     size_type size() const { return _size; }
     bool empty() const { return _size == 0; }
-
     void clear();
 
     iterator<T> begin() { return iterator<T>(head); }
@@ -65,10 +64,10 @@ public:
 };
 
 template<typename T>
-void MyList<T>::push_back(const T& value) {
+void MyList<T>::push_back(const T& val) {
     Node<T>* new_node = _alloc.allocate(1);
     try {
-        _alloc.construct(new_node, value, nullptr, tail);
+        _alloc.construct(new_node, val, nullptr, tail);
         if (tail) {
             tail->next = new_node;
         } else {
@@ -83,10 +82,10 @@ void MyList<T>::push_back(const T& value) {
 }
 
 template<typename T>
-void MyList<T>::push_front(const T& value) {
+void MyList<T>::push_front(const T& val) {
     Node<T>* new_node = _alloc.allocate(1);
     try {
-        _alloc.construct(new_node, value, head, nullptr);
+        _alloc.construct(new_node, val, head, nullptr);
         if (head) {
             head->prev = new_node;
         } else {
@@ -102,7 +101,7 @@ void MyList<T>::push_front(const T& value) {
 
 template<typename T>
 void MyList<T>::pop_back() {
-    if (empty()) throw std::out_of_range("empty list");
+    if (empty()) throw std::out_of_range("empty");
     Node<T>* to_delete = tail;
     tail = tail->prev;
     if (tail) {
@@ -117,7 +116,7 @@ void MyList<T>::pop_back() {
 
 template<typename T>
 void MyList<T>::pop_front() {
-    if (empty()) throw std::out_of_range("empty list");
+    if (empty()) throw std::out_of_range("empty");
     Node<T>* to_delete = head;
     head = head->next;
     if (head) {
