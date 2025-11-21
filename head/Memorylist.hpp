@@ -11,13 +11,13 @@ class ListMemoryResource : public std::pmr::memory_resource {
 private:
     struct NodeAllocation {
         void* ptr;
-        size_t requested_bytes;   
+        size_t byt;   
         size_t alignment;
-        size_t element_size;     
-        bool in_use;
+        size_t el_size;     
+        bool use;
 
         NodeAllocation(void* p, size_t bytes, size_t align, size_t elem_sz = 0)
-            : ptr(p), requested_bytes(bytes), alignment(align), element_size(elem_sz), in_use(true) {}
+            : ptr(p), byt(bytes), alignment(align), el_size(elem_sz), use(true) {}
     };
 
     std::vector<NodeAllocation> _nodes;
@@ -48,16 +48,16 @@ ListMemoryResource::ListMemoryResource(std::pmr::memory_resource* upstream)
 
 ListMemoryResource::~ListMemoryResource() {
     for (const auto& node : _nodes) {
-         _upstream->deallocate(node.ptr, node.requested_bytes, node.alignment);
+         _upstream->deallocate(node.ptr, node.byt, node.alignment);
     }
 }
 
 void* ListMemoryResource::do_allocate(size_t bytes, size_t alignment) {
     for (auto& node : _nodes) {
-        if (!node.in_use
-            && node.requested_bytes >= bytes
+        if (!node.use
+            && node.byt >= bytes
             && node.alignment >= alignment) {
-            node.in_use = true;
+            node.use = true;
             return node.ptr;
         }
     }
@@ -70,13 +70,13 @@ void* ListMemoryResource::do_allocate(size_t bytes, size_t alignment) {
 void ListMemoryResource::do_deallocate(void* p, size_t bytes, size_t alignment) {
     for (auto& node : _nodes) {
         if (node.ptr == p) {
-            if (!node.in_use) {
+            if (!node.use) {
                 throw std::logic_error("Double deallocation detected for node at " + std::to_string(reinterpret_cast<uintptr_t>(p)));
             }
-            if (node.requested_bytes < bytes || node.alignment < alignment) {
+            if (node.byt < bytes || node.alignment < alignment) {
                 std::cout << "WARNING: deallocate"<< std::endl;
             }
-            node.in_use = false;
+            node.use = false;
             return;
         }
     }
@@ -90,24 +90,24 @@ bool ListMemoryResource::do_is_equal(const std::pmr::memory_resource& other) con
 // для анализа
 size_t ListMemoryResource::active_nodes() const {
     return std::count_if(_nodes.begin(), _nodes.end(),
-                         [](const NodeAllocation& n) { return n.in_use; });
+                         [](const NodeAllocation& n) { return n.use; });
 }
 
 size_t ListMemoryResource::total_allocated_bytes() const {
     size_t total = 0;
     for (const auto& node : _nodes) {
-        total += node.requested_bytes;
+        total += node.byt;
     }
     return total;
 }
 
 void ListMemoryResource::stats() const {
-    auto active = active_nodes();
+    auto act = active_nodes();
     auto total = _nodes.size();
     auto total_bytes = total_allocated_bytes();
     std::cout << "[ListMemoryResource] Stats:\n"
               << "  Total nodes:      " << total << "\n"
-              << "  Active nodes:     " << active << "\n"
-              << "  Free nodes:       " << (total - active) << "\n"
+              << "  Active nodes:     " << act << "\n"
+              << "  Free nodes:       " << (total - act) << "\n"
               << "  Total allocated:  " << total_bytes << " bytes\n";
 }
