@@ -12,10 +12,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(memorylist_app body/memorylist.cpp)
-target_include_directories(memorylist_app PRIVATE head)
-
-
 add_executable(test_list tests/test_list.cpp)
 target_include_directories(test_list PRIVATE head)
 target_link_libraries(test_list PRIVATE GTest::gtest_main)
