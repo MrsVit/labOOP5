@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "..\head\list.hpp"
+#include <vector>
 
 TEST(MyListBasicTest, CreateEmptyList) {
     MyList<int> list;
@@ -183,4 +184,104 @@ TEST(MyListBasicTest, PopEmptyThrows) {
 TEST(MyListBasicTest, PopBackOnEmptyAlsoThrows) {
     MyList<int> list;
     EXPECT_THROW(list.pop_back(), std::out_of_range);
+}
+
+// Чтобы потестить чисто итераторы
+template<typename T>
+MyList<T> make_test_list() {
+    MyList<T> lst;
+    for (T i = 1; i <= 5; ++i) {
+        lst.push_back(i);
+    }
+    return lst;
+}
+
+TEST(BidirectionalIteratorTest, DefaultConstructor) {
+    iterator<int> it;
+    EXPECT_EQ(it, iterator<int>(nullptr));
+}
+
+TEST(BidirectionalIteratorTest, DereferenceAndArrow) {
+    MyList<int> lst = make_test_list<int>();
+    auto it = lst.begin();
+
+    EXPECT_EQ(*it, 1);
+    *it = 10;
+    EXPECT_EQ(*it, 10);
+    lst.pop_front(); 
+}
+
+TEST(BidirectionalIteratorTest, IncrementOperators) {
+    MyList<int> lst = make_test_list<int>();
+    auto it = lst.begin();
+
+    EXPECT_EQ(*it, 1);
+
+    auto it_old = it++;
+    EXPECT_EQ(*it_old, 1);
+    EXPECT_EQ(*it, 2);
+
+    ++it;
+    EXPECT_EQ(*it, 3);
+}
+
+TEST(BidirectionalIteratorTest, DecrementOperators) {
+    MyList<int> lst = make_test_list<int>();
+    auto it = lst.end();
+
+    --it; 
+    EXPECT_EQ(*it, 5);
+
+    auto it_old = it--;
+    EXPECT_EQ(*it_old, 5);
+    EXPECT_EQ(*it, 4);
+
+    --it;
+    EXPECT_EQ(*it, 3);
+}
+
+TEST(BidirectionalIteratorTest, RoundTripTraversal) {
+    MyList<int> lst = make_test_list<int>();
+    auto it = lst.begin();
+    std::vector<int> forward;
+    for (; it != lst.end(); ++it) {
+        forward.push_back(*it);
+    }
+    EXPECT_EQ(forward, (std::vector<int>{1, 2, 3, 4, 5}));
+
+    std::vector<int> backward;
+    it = lst.end();
+    while (it != lst.begin()) {
+        --it;
+        backward.push_back(*it);
+    }
+    EXPECT_EQ(backward, (std::vector<int>{5, 4, 3, 2, 1}));
+}
+
+TEST(BidirectionalIteratorTest, EqualityOperators) {
+    MyList<int> lst = make_test_list<int>();
+    auto it1 = lst.begin();
+    auto it2 = lst.begin();
+    auto it3 = ++lst.begin(); 
+
+    EXPECT_TRUE(it1 == it2);
+    EXPECT_FALSE(it1 == it3);
+    EXPECT_TRUE(it1 != it3);
+    EXPECT_FALSE(it1 != it2);
+}
+
+TEST(BidirectionalIteratorTest, EmptyListSafety) {
+    MyList<int> lst;
+
+    auto it = lst.begin();
+    EXPECT_EQ(it, lst.end());
+    ASSERT_DEATH({
+        auto bad = --it;
+        (void)bad;
+    }, "");
+
+    ASSERT_DEATH({
+        auto bad = it--;
+        (void)bad;
+    }, "");
 }
