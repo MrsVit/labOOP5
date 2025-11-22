@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "..\head\Memorylist.hpp"
+#include "..\head\list.hpp"
 
 class PoolTest : public ::testing::Test {
 protected:
@@ -18,7 +19,7 @@ TEST_F(PoolTest, ReusesBlockAfterFree) {
     void* p1 = pool.allocate(64, 8);
     pool.deallocate(p1, 64, 8);
 
-    void* p2 = pool.allocate(32, 8);  // меньше — подходит
+    void* p2 = pool.allocate(32, 8);  
     EXPECT_EQ(p1, p2);
 }
 
@@ -84,4 +85,70 @@ TEST(PoolDtorTest, DestructorFreesAllUpstream) {
     }
 
     EXPECT_EQ(dealloc_count, 2u);
+}
+
+
+TEST_F(PoolTest, MyListWorks) {
+    MyList<int> lst(&pool);
+
+    EXPECT_EQ(lst.size(), 0u);
+    EXPECT_TRUE(lst.empty());
+    EXPECT_EQ(pool.active_nodes(), 0u);
+    EXPECT_EQ(pool.node_count(), 0u);
+
+    lst.push_back(10);
+    EXPECT_EQ(lst.size(), 1u);
+    EXPECT_FALSE(lst.empty());
+    EXPECT_EQ(pool.active_nodes(), 1u);
+
+    lst.push_front(5);
+    EXPECT_EQ(lst.size(), 2u);
+    EXPECT_EQ(pool.active_nodes(), 2u);
+     lst.push_back(20);
+    EXPECT_EQ(lst.size(), 3u);
+    EXPECT_EQ(pool.active_nodes(), 3u);
+
+    std::vector<int> expected = {5, 10, 20};
+    std::vector<int> actual;
+    for (const auto& x : lst) {
+        actual.push_back(x);
+    }
+    EXPECT_EQ(actual, expected);
+
+    lst.pop_front();  
+    EXPECT_EQ(lst.size(), 2u);
+    EXPECT_EQ(pool.active_nodes(), 2u);
+
+    lst.pop_back();   
+    EXPECT_EQ(lst.size(), 1u);
+    EXPECT_EQ(pool.active_nodes(), 1u);
+
+    EXPECT_EQ(*lst.begin(), 10);
+       lst.clear();
+    EXPECT_EQ(lst.size(), 0u);
+    EXPECT_TRUE(lst.empty());
+    EXPECT_EQ(pool.active_nodes(), 0u);
+    EXPECT_EQ(pool.node_count(), 3u);  
+    EXPECT_EQ(pool.total_allocated_bytes(), 3 * sizeof(Node<int>));
+}
+
+TEST_F(PoolTest, SharedPoolBetweenStdAndMyList) {
+    std::pmr::list<int> std_lst(&pool);
+    MyList<int> my_lst(&pool);
+
+    std_lst.push_back(100);
+    my_lst.push_back(200);
+
+    EXPECT_EQ(pool.active_nodes(), 2u);  
+
+    auto it1 = std_lst.begin();
+    auto it2 = my_lst.begin();
+
+    EXPECT_EQ(*it1, 100);
+    EXPECT_EQ(*it2, 200);
+
+    std_lst.clear();
+    my_lst.clear();
+
+    EXPECT_EQ(pool.active_nodes(), 0u);
 }
